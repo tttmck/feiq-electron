@@ -1,77 +1,91 @@
 # feiq-electron
 
-飞秋（FeiQ / IP Messenger）的 macOS 客户端，Electron 图形界面 + Go 后端，
-与 Windows 上的**飞秋、飞鸽传书（IPMSG）、iptux** 在局域网内直接互通。
+[中文说明](README.zh-CN.md)
 
-界面照飞秋 2013 原版风格复刻（皮肤素材取自 FeiQ.exe 解包位图，XP 水晶风）。
+A macOS client for **FeiQ (Fei Qiu) / IP Messenger**, built with an Electron UI and a Go backend.
+It talks directly to Windows **FeiQ, IPMsg (飞鸽传书) and iptux** clients over the local network.
 
-## 功能
+The interface replicates the classic **FeiQ 2013** look (skin assets extracted from the original
+FeiQ.exe resources — XP aqua style).
 
-- 好友自动发现（UDP 2425 广播，与飞秋同协议；分组显示；Tailscale 网段主动探测）
-- 点对点聊天、多人群发（勾选）、全网段广播
-- 文件 / 文件夹传输（TCP 2425，飞秋同款协议，中文文件名自动 GBK 转换）
-- 送达回执、离线消息（对方上线自动补发）、离开状态
-- 聊天记录本地保存（`~/.feiq-tui/history/`）
-- 收文件弹窗确认，自动保存到 `~/.feiq-tui/downloads/`（同名自动加 `(1)`）
+## Features
 
-## 使用
+- Automatic peer discovery (UDP 2425 broadcast, same protocol as FeiQ; grouped display;
+  active probing for Tailscale subnets)
+- One-to-one chat, multi-recipient group send (checkbox selection), subnet-wide broadcast
+- File and folder transfer (TCP 2425, FeiQ-compatible protocol; Chinese filenames auto-converted to GBK)
+- Delivery receipts, offline messages (auto-retransmitted when the peer comes online), away status
+- Chat history persisted locally (`~/.feiq-tui/history/`)
+- Incoming files require confirmation and are saved to `~/.feiq-tui/downloads/`
+  (duplicates get `(1)` suffix automatically)
 
-打包好的 App 双击即用（Go 后端二进制已内嵌进 App，无需安装 Go / Node）：
+## Usage
 
-- 双击 `/Applications/飞秋.app`，或 Spotlight 搜「飞秋」
-- 终端命令 `feiq`（等价 `open -a 飞秋`）
+The packaged app is self-contained (the Go backend binary is bundled inside the app bundle —
+no Go or Node installation required):
 
-操作：左侧好友列表点选开聊（顶部标签页可同时开多个）；
-勾选框多选即群发；「发送文件」走系统文件对话框（可多选文件与文件夹）；
-收到文件弹原生确认框；传输进度点工具栏「传输」查看；失焦时新消息弹系统通知。
-系统提示、广播与群发记录统一在常驻的「系统」标签页里。
+- Double-click `/Applications/飞秋.app`, or find "飞秋" in Spotlight
+- Or run `feiq` in a terminal (equivalent to `open -a 飞秋`)
 
-## 架构
+Click a contact on the left to open a chat (multiple sessions live as tabs on top);
+tick checkboxes to select multiple recipients for a group send; "Send File" opens the native
+file dialog (multiple files and folders supported); incoming files show a native confirmation
+dialog; transfer progress lives behind the "Transfers" toolbar button; new messages raise a
+system notification while the window is unfocused. System notices, broadcasts and group-send
+logs are collected in the always-present "System" tab.
 
-Electron 主进程拉起 `feiq-tui --serve` 子进程（JSON-RPC over stdio），
-协议与业务全在 Go 内核，界面为原生 HTML/CSS/JS（无框架）：
+## Architecture
+
+The Electron main process spawns a `feiq-tui --serve` child process (JSON-RPC over stdio).
+All protocol and business logic lives in the Go core; the UI is plain HTML/CSS/JS (no framework):
 
 ```
-internal/ipmsg   协议层：报文编解码、GBK 转换、UDP 广播、TCP 文件/目录流
-internal/core    业务层：好友表、事件分发、传输会话、离线队列、聊天记录、serve 模式
-electron/        Electron 壳：主进程桥接、preload IPC、渲染层界面与皮肤
-main.go          入口与配置（--serve 服务模式）
+internal/ipmsg   Protocol layer: packet codec, GBK conversion, UDP broadcast, TCP file/dir streams
+internal/core    Core logic: peer table, event dispatch, transfer sessions, offline queue,
+                 chat history, serve mode
+electron/        Electron shell: main-process bridge, preload IPC, renderer UI and skin
+main.go          Entry point and config (--serve service mode)
 ```
 
-配置文件 `~/.feiq-tui/config.json`：昵称 / 分组 / 下载目录 / 黑名单 / 探测网段。
-环境变量可覆盖后端参数：`FEIQ_NAME`、`FEIQ_GROUP`、`FEIQ_PORT`、`FEIQ_DIR`。
+Config file `~/.feiq-tui/config.json`: nickname / group / download dir / blacklist / probe nets.
+Environment variables override backend parameters: `FEIQ_NAME`, `FEIQ_GROUP`, `FEIQ_PORT`, `FEIQ_DIR`.
 
-## 开发与打包
+## Development & Packaging
 
 ```bash
-# 开发模式（先编译 Go 后端，再起 Electron）
+# Dev mode (build the Go backend first, then start Electron)
 go build -o feiq-tui .
 cd electron && npm install && npm start
 
-# 打包 App
+# Package the app
 cd electron && npx electron-builder --mac dir
-# 产物在 electron/dist/mac-arm64/飞秋.app，拷入 /Applications 后:
+# Output: electron/dist/mac-arm64/飞秋.app — copy into /Applications, then:
 codesign --force --deep --sign - /Applications/飞秋.app
 
-# 测试
-go test ./...   # 协议层单测 + 双实例集成测试（发现/聊天/传文件/离线补发）
+# Tests
+go test ./...   # protocol unit tests + two-instance integration tests
+                # (discovery / chat / file transfer / offline retransmit)
 ```
 
-## 与飞秋互通的协议说明
+## Protocol notes (FeiQ interoperability)
 
-- 消息走 UDP 2425，格式 `1:包号:昵称:主机名:命令字:附加段`，
-  命令字 = 功能（低 8 位）+ 选项（高 24 位）
-- 发送侧默认 UTF-8 编码并带 `UTF8OPT (0x800000)` 标志；
-  接收侧先按 UTF-8 校验、再按 GB18030 解码——飞秋中文消息默认 GBK，直接可读
-- 文件传输：发送方先发 `SENDMSG|FILEATTACH` 通告
-  （`文件ID:文件名:大小:时间:属性`，十六进制，文件名 `:`→`::` 转义），
-  接收方确认后 TCP 连 2425 发 `GETFILEDATA`（`包号:文件ID:偏移`）拉取原始字节
-- 文件夹走 `GETDIRFILES` 目录流：`头长:名字:大小:属性:14=mtime:16=ctime:` 自描述格式，
-  深度优先、`RETPARENT` 项返回上级；发送侧文件名按 GBK 编码以兼容 Windows
-- 上线/下线/状态用 `BR_ENTRY / ANSENTRY / BR_EXIT / BR_ABSENCE`
+- Messages travel over UDP 2425 in the form `1:packetNo:nickname:hostname:command:extra`,
+  where command = function (low 8 bits) + options (upper 24 bits)
+- The sending side uses UTF-8 with the `UTF8OPT (0x800000)` flag by default;
+  the receiving side validates UTF-8 first, then falls back to GB18030 decoding —
+  FeiQ's default GBK Chinese messages are readable out of the box
+- File transfer: the sender first announces with `SENDMSG|FILEATTACH`
+  (`fileID:name:size:mtime:attr`, hex-encoded, `:` in names escaped as `::`);
+  after confirmation the receiver connects over TCP 2425 and pulls raw bytes
+  with `GETFILEDATA` (`packetNo:fileID:offset`)
+- Folders use the `GETDIRFILES` directory stream: a self-describing
+  `headerLen:name:size:attr:14=mtime:16=ctime:` format, depth-first, with a `RETPARENT`
+  entry to go up one level; the sender encodes filenames as GBK for Windows compatibility
+- Presence uses `BR_ENTRY / ANSENTRY / BR_EXIT / BR_ABSENCE`
 
-### 未覆盖的飞秋私有功能
+### FeiQ proprietary features not covered
 
-飞秋的群聊、截图、图片消息、远程协助、共享目录是**私有协议扩展（无公开文档）**，
-本客户端暂未实现（收到此类消息会忽略或显示占位文本）。
-若需要精确兼容，可用逆向工具（如 Ghidra + REA）分析 `FeiQ.exe` 的私有命令字后补充。
+FeiQ's group chat, screenshot, image messages, remote assistance and shared folders are
+**proprietary protocol extensions without public documentation** and are not implemented
+(such messages are ignored or shown as placeholder text). Exact compatibility would require
+reverse engineering the private command codes in `FeiQ.exe` (e.g. with Ghidra + REA).
