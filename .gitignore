@@ -1,0 +1,10 @@
+# Go 编译产物
+/feiq-tui
+feiq-tui.exe
+
+# Electron 依赖与打包产物
+electron/node_modules/
+electron/dist/
+
+# 系统文件
+.DS_Store

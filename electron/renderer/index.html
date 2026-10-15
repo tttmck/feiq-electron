@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>飞秋</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="toolbar">
+      <img id="logo" src="skin/banner.png" alt="飞秋">
+      <span id="self-name" class="self-name">…</span>
+      <span class="spacer"></span>
+      <button id="btn-refresh" title="重新广播上线，刷新好友">刷新</button>
+      <button id="btn-file" title="向当前会话发送文件">发送文件</button>
+      <button id="btn-trans" title="传输进度">传输</button>
+      <button id="btn-away" title="离开状态切换">离开</button>
+    </header>
+
+    <div id="main">
+      <aside id="roster">
+        <div id="pal-tree"></div>
+        <div id="roster-empty" class="empty">
+          <div class="empty-icon"></div>暂无好友<br><small>按「刷新」或等待他人上线</small>
+        </div>
+      </aside>
+
+      <section id="chat-pane">
+        <div id="tabs"></div>
+        <div id="chat-view">
+          <div id="chat-empty" class="empty">在左侧选择一位好友开始聊天<br><small>勾选框可多选进行群发</small></div>
+          <div id="chat-log"></div>
+        </div>
+        <div id="composer">
+          <div id="target-hint">未选择对象</div>
+          <textarea id="input" placeholder="输入消息，Ctrl+Enter 或点「发送」。勾选多位好友即为群发。" rows="4"></textarea>
+          <div class="composer-bar">
+            <button id="btn-broadcast" class="ghost" title="发送到全网段所有 IPMSG 客户端">广播模式</button>
+            <span class="spacer"></span>
+            <button id="btn-send" class="primary">发送</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer id="statusbar">
+      <span id="status-online">在线好友 0</span>
+      <span id="status-transfer" class="muted">无传输任务</span>
+    </footer>
+  </div>
+
+  <div id="trans-panel" class="hidden">
+    <div class="trans-head">
+      <span>传输任务</span>
+      <button id="btn-trans-close" class="ghost">关闭</button>
+    </div>
+    <div id="trans-list"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

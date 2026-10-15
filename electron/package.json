@@ -1,0 +1,45 @@
+{
+  "name": "feiq",
+  "version": "1.0.0",
+  "description": "飞秋 (FeiQ/IPMSG) 的 Electron 图形客户端，后端复用 feiq-tui Go 服务",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "productName": "飞秋",
+  "build": {
+    "appId": "com.pphorse.feiq",
+    "productName": "飞秋",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**"
+    ],
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build-icon.icns",
+      "identity": null
+    },
+    "extraResources": [
+      {
+        "from": "../feiq-tui",
+        "to": "feiq-tui"
+      }
+    ]
+  }
+}
