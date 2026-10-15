@@ -1,4 +1,4 @@
-// feiq-tui 是飞秋 (FeiQ/IPMSG) 的终端版客户端，运行于 macOS/Linux，
+// feiq-tui 是飞秋 (FeiQ/IPMSG) Mac 客户端的后端服务（供 Electron 界面调用），
 // 与 Windows 飞秋、飞鸽传书、iptux 在局域网内互通。
 package main
 
@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"feiq-tui/internal/core"
-	"feiq-tui/internal/ui"
 )
 
 func main() {
@@ -57,21 +56,10 @@ func main() {
 		return
 	}
 
-	c := core.New(cfg)
-	if err := c.Start(); err != nil {
-		fmt.Fprintln(os.Stderr, "启动失败:", err)
-		fmt.Fprintln(os.Stderr, "（2425 端口被占用？可能是飞鸽/飞秋类程序已在运行）")
-		os.Exit(1)
-	}
-	c.BroadcastEntry()
-
-	app := ui.New(c)
-	uiErr := app.Run()
-	c.Shutdown() // 不用 defer：os.Exit 前必须广播下线
-	if uiErr != nil {
-		fmt.Fprintln(os.Stderr, "界面错误:", uiErr)
-		os.Exit(1)
-	}
+	// 界面已统一为 Electron 版，本程序只作为其后端服务。
+	flag.Usage()
+	fmt.Fprintln(os.Stderr, "请启动「飞秋.app」（或终端执行 feiq）使用；本程序由 App 自动拉起。")
+	os.Exit(1)
 }
 
 // persistedCfg 是 ~/.feiq-tui/config.json 的持久化字段。
